@@ -123,43 +123,51 @@ var content = document.createElement("div");
 var NEWS_URL = "https://api.hnpwa.com/v0/news/1.json";
 var CONTENT_URL = "https://api.hnpwa.com/v0/item/@id.json";
 var container = document.getElementById("root");
+//container 변수화하는 이유가 코드를 중복사용하지 않기 위해서도 있지만 (보기 좋기 짧게 하기 위해서 )id나 className이 바뀌었을 때 모든 getElementsById 속 id를 바꾸지 않기 위해서도 있다.
+
+var store = {
+  currentPage: 1
+};
 var getData = function getData(url) {
   ajax.open("GET", url, false); // false -> 데이터를 동기적으로 처리하겠다.
   ajax.send(); //데이터를 가져오는 메서드
   return JSON.parse(ajax.response); //return은 결과물을 내보낼때 필요
 }; //중복되는 코드 함수로 코드 묶기
 
-var newFeed = getData(NEWS_URL); // 데이터를 Json 형식으로 바꾸기
-var ul = document.createElement("ul");
-document.getElementById("root").appendChild(ul);
-window.addEventListener("hashchange", function () {
-  var id = location.hash.substring(1); // 여기에 this.location.hash 랑 그냥 location.hash의 차이를 알아보자 (this를 자동완성해주었다.)
+var newsFeed = function newsFeed() {
+  var newFeed = getData(NEWS_URL); // 데이터를 Json 형식으로 바꾸기
+  var newsList = [];
+  newsList.push("<ul>");
+  for (var i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
+    newsList.push("<li><a href=\"#/show/".concat(newFeed[i].id, "\">").concat(newFeed[i].title, " (").concat(newFeed[i].comments_count, ")</a></li>")); //domAPI를 최소화하는 것이 좋다
+  }
+
+  newsList.push("</ul>");
+  newsList.push("<div><a href='#/page/".concat(store.currentPage > 1 ? store.currentPage - 1 : 1, "'>\uC774\uC804\uD398\uC774\uC9C0 </a> <a href='#/page/").concat(store.currentPage + 1, "'>\uB2E4\uC74C\uD398\uC774\uC9C0 </a></div>\n"));
+  container.innerHTML = newsList.join("");
+  // newList 자체는 배열이기 때문에 innerHTML에 들어갈 수 없다. 따라서 join함수를 이용해서 문자열로 바꿔준다.
+};
+
+var newsDetail = function newsDetail() {
+  var id = location.hash.substring(7); // 여기에 this.location.hash 랑 그냥 location.hash의 차이를 알아보자 (this를 자동완성해주었다.)
 
   var newsContent = getData(CONTENT_URL.replace("@id", id));
-  var title = document.createElement("h1");
-  console.log(newsContent);
-  container.innerHTML = "<h1> ".concat(newsContent.title, "</h1> <div> <a href='#'>\uBAA9\uB85D\uC73C\uB85C</div>");
-  // title.innerHTML = newsContent.title;
-
-  // content.appendChild(title);
-});
-
-var newList = [];
-newsList.push("<ul>");
-for (var i = 0; i < 10; i++) {
-  var div = document.createElement("div");
-  newsList.push("<li><a href=\"#".concat(newFeed[i].id, "\">").concat(newFeed[i].title, " (").concat(newFeed[i].comments_count, ")</a></li>"));
-  // const li = document.createElement("li");
-  // const a = document.createElement("a");
-  // a.innerHTML = `${newFeed[i].title} (${newFeed[i].comments_count})`; -> dom api를 사용하여 만든것 (ui가 어떻게 생겼는지 직관적으로 보이지 않음 )
-  // a.href = `#${newFeed[i].id}`;  아래 코드와 같이 문자열로 표현하는 것이 더 직관적이다.(마크업 구조가 더 잘 보인다.) + 태그를 포함시킬 수 있댜 (span, li같은)
-  div.innerHTML = "<li><a href=\"#".concat(newFeed[i].id, "\">").concat(newFeed[i].title, " (").concat(newFeed[i].comments_count, ")</a></li>");
-  // li.appendChild(a);
-  ul.appendChild(div.firstElementChild);
-}
-container.appendChild(ul);
-container.appendChild(content);
-// 변수화하는 이유가 코드를 중복사용하지 않기 위해서도 있지만 (보기 좋기 짧게 하기 위해서 )id나 className이 바뀌었을 때 모든 getElementsById 속 id를 바꾸지 않기 위해서도 있다.
+  container.innerHTML = "<h1> ".concat(newsContent.title, "</h1> <div> <a href='#/page/").concat(store.currentPage, "'>\uBAA9\uB85D\uC73C\uB85C</div>");
+};
+var router = function router() {
+  var routePath = location.hash;
+  if (routePath === "") {
+    newsFeed();
+  } else if (routePath.indexOf("#/page/") >= 0) {
+    store.currentPage = Number(routePath.substring(7)); //단순히  routePath.substring(7) 이렇게만 하면 문자열이기 때문에 currentPage가 더해지지 않고 11 12 이런식으로 붙여서 나온다.
+    // console.log(routePath.substring(7));
+    newsFeed();
+  } else {
+    newsDetail();
+  }
+};
+window.addEventListener("hashchange", router);
+router();
 },{}],"../../../../../../../opt/homebrew/lib/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
