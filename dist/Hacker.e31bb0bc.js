@@ -137,14 +137,15 @@ var getData = function getData(url) {
 var newsFeed = function newsFeed() {
   var newFeed = getData(NEWS_URL); // 데이터를 Json 형식으로 바꾸기
   var newsList = [];
-  newsList.push("<ul>");
+  var template = "\n<div class='container mx-auto p-4'>\n<h1> Hacker News </h1>\n<ul> \n\n{{__news_feed__}}\n\n</ul>\n<div>\n\n<a href='#/page/{{__prev_page__}}'>\uC774\uC804\uD398\uC774\uC9C0</a>\n<a href='#/page/{{__next_page__}}'>\uB2E4\uC74C\uD398\uC774\uC9C0</a>\n</div>\n\n\n</div>\n\n\n\n\n";
   for (var i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
     newsList.push("<li><a href=\"#/show/".concat(newFeed[i].id, "\">").concat(newFeed[i].title, " (").concat(newFeed[i].comments_count, ")</a></li>")); //domAPI를 최소화하는 것이 좋다
   }
 
-  newsList.push("</ul>");
-  newsList.push("<div><a href='#/page/".concat(store.currentPage > 1 ? store.currentPage - 1 : 1, "'>\uC774\uC804\uD398\uC774\uC9C0 </a> <a href='#/page/").concat(store.currentPage + 1, "'>\uB2E4\uC74C\uD398\uC774\uC9C0 </a></div>\n"));
-  container.innerHTML = newsList.join("");
+  template = template.replace("{{__news_feed__}}", newsList.join(""));
+  template = template.replace("{{__prev_page__}}", store.currentPage > 1 ? store.currentPage - 1 : 1);
+  template = template.replace("{{__next_page__}}", store.currentPage < 3 ? store.currentPage + 1 : 3);
+  container.innerHTML = template;
   // newList 자체는 배열이기 때문에 innerHTML에 들어갈 수 없다. 따라서 join함수를 이용해서 문자열로 바꿔준다.
 };
 
@@ -193,7 +194,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62808" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50074" + '/');
   ws.onmessage = function (event) {
     checkedAssets = {};
     assetsToAccept = [];
