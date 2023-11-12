@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "strict": true, //얼마나 엄격하게 false 로 해놓으면 자바스크립트로도 충분히 개발 가능 
+    "target": "ES5",
+    "module": "CommonJS",
+    "alwaysStrict": true,
+    "noImplicitAny": true, //any를 쓸 수 없게 
+    "noImplicitThis": true,
+    "sourceMap": true,
+    "downlevelIteration": true
+  } 
+}
