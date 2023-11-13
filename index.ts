@@ -1,32 +1,29 @@
-type Store = {
+interface Store {
   currentPage: number;
   feeds: NewsFeed[];
-};
-type News = {
-  id: number;
-  url: string;
-  time_ago: string;
+}
+interface News {
+  readonly id: number; //readonly를 붙이면 타입값이 변하지 않음.
+  readonly url: string;
+  readonly time_ago: string;
 
-  title: string;
-  content: string;
-  user: string;
-};
+  readonly title: string;
+  readonly content: string;
+  readonly user: string;
+}
 
-type NewsFeed = News & {
-  comments_count: number;
-
-  points: number;
-
-  read?: boolean;
-};
-type NewsDetail = News & {
-  comments: NewsComment[];
-  level: number;
-};
-type NewsComment = News & {
-  comments: NewsComment[];
-  level: number;
-};
+interface NewsFeed extends News {
+  readonly comments_count: number;
+  readonly points: number;
+  read?: boolean; //read는 true / false 로 변환시키기 때문에 readonly로 사용하지 않는다
+}
+interface NewsDetail extends News {
+  readonly comments: NewsComment[];
+}
+interface NewsComment extends News {
+  readonly comments: NewsComment[];
+  readonly level: number;
+}
 const ajax: XMLHttpRequest = new XMLHttpRequest();
 const NEWS_URL = "https://api.hnpwa.com/v0/news/1.json";
 const CONTENT_URL = "https://api.hnpwa.com/v0/item/@id.json";
