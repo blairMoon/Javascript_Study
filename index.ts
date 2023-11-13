@@ -1,19 +1,50 @@
-const ajax = new XMLHttpRequest();
-const content = document.createElement("div");
+type Store = {
+  currentPage: number;
+  feeds: NewsFeed[];
+};
+type News = {
+  id: number;
+  url: string;
+  time_ago: string;
+
+  title: string;
+  content: string;
+  user: string;
+};
+
+type NewsFeed = News & {
+  comments_count: number;
+
+  points: number;
+
+  read?: boolean;
+};
+type NewsDetail = News & {
+  comments: NewsComment[];
+  level: number;
+};
+type NewsComment = {
+  comments: NewsComment[];
+  lever: number;
+};
+const ajax: XMLHttpRequest = new XMLHttpRequest();
 const NEWS_URL = "https://api.hnpwa.com/v0/news/1.json";
 const CONTENT_URL = "https://api.hnpwa.com/v0/item/@id.json";
-const container = document.getElementById("root");
+const container: HTMLElement | null = document.getElementById("root");
+const content = document.createElement("div");
 //container 변수화하는 이유가 코드를 중복사용하지 않기 위해서도 있지만 (보기 좋기 짧게 하기 위해서 )id나 className이 바뀌었을 때 모든 getElementsById 속 id를 바꾸지 않기 위해서도 있다.
 
-const store = {
+const store: Store = {
   currentPage: 1,
   feeds: [],
 };
 
-const getData = (url) => {
+const getData = (url: string): NewsFeed | NewsDetail => {
+  // getData는 return 값이 url에 따라서 두가지 타입으로 출력되고 있으므로 위와 같이 | 사용하여 구분해준다.
+
   ajax.open("GET", url, false); // false -> 데이터를 동기적으로 처리하겠다.
   ajax.send(); //데이터를 가져오는 메서드
-  // console.log(JSON.parse(ajax.response));
+
   return JSON.parse(ajax.response); //return은 결과물을 내보낼때 필요
 }; //중복되는 코드 함수로 코드 묶기
 
@@ -24,8 +55,17 @@ const makeFeeds = (feedsData) => {
   return feedsData;
 };
 
+// container가 null인 경우 , innerHTML 속성을 쓸 수 없기 때문에 type에러가 남. 이 부분에 대하여 따로 처리하기 위해 함수 작성
+const updateView = (html) => {
+  if (container) {
+    container.innerHTML = html;
+  } else {
+    console.error("에러가 났습니다");
+  }
+};
+
 const newsFeed = () => {
-  let newsFeeds = store.feeds;
+  let newsFeeds: NewsFeed[] = store.feeds;
   const newsList = [];
   let template = `
     <div class="bg-gray-600 min-h-screen">
@@ -91,7 +131,7 @@ const newsFeed = () => {
     store.currentPage < 3 ? store.currentPage + 1 : 3
   ); //다음  페이지로 이동하기 위해서 store.currentPage를 페이지마다 변경하여 저장
   //마지막 페이지가 3페이지기에 3을 기준으로 변경
-  container.innerHTML = template;
+  updateView(template);
 };
 const newsDetail = () => {
   const id = location.hash.substring(7); // 여기에 this.location.hash 랑 그냥 location.hash의 차이를 알아보자 (this를 자동완성해주었다.)
@@ -125,18 +165,18 @@ const newsDetail = () => {
     </div>
   `;
 
-for (let i = 0; i < store.feeds.length; i++) {
+  for (let i = 0; i < store.feeds.length; i++) {
     console.log("hello");
-if (store.feeds[i].id === Number(id)){
-  console.log('hello')
-  store.feeds[i].read = true;
-  break;
-}
-}
-    
+    if (store.feeds[i].id === Number(id)) {
+      console.log("hello");
+      store.feeds[i].read = true;
+      break;
+    }
+  }
+
   const makeComment = (comments, called = 0) => {
     const commentString = [];
-  //대댓글 구현하는 구조 잘 봐두기!! 
+    //대댓글 구현하는 구조 잘 봐두기!!
     for (let i = 0; i < comments.length; i++) {
       commentString.push(`
         <div style="padding-left: ${called * 40}px;" class="mt-4">
@@ -157,9 +197,8 @@ if (store.feeds[i].id === Number(id)){
     // console.log(commentString);
     return commentString.join("");
   };
-  container.innerHTML = template.replace(
-    "  {{__comments__}}",
-    makeComment(newsContent.comments)
+  updateView(
+    template.replace("  {{__comments__}}", makeComment(newsContent.comments))
   );
 };
 
