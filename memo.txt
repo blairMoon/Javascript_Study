@@ -1,0 +1,14 @@
+
+
+
+ *** getData<NewsFeed[]>와  getData<NewsDetail> 의 차이 
+
+getData<NewsFeed[]>(NEWS_URL)에서 꺾쇠 괄호([]) 안에 있는 것은 TypeScript에서 배열 타입을 나타냅니다. 따라서 getData<NewsFeed[]>(NEWS_URL)는 NEWS_URL에서 가져온 데이터가 NewsFeed 객체들로 이루어진 배열일 것으로 기대한다는 것을 TypeScript에게 알려주는 것입니다.
+
+반면에 getData<NewsDetail>(CONTENT_URL.replace("@id", id))에서는 꺾쇠 괄호 안에 배열 표시가 없습니다. 이는 CONTENT_URL.replace("@id", id)에서 가져온 데이터가 NewsDetail 타입의 단일 객체일 것으로 기대한다는 것을 의미합니다.
+
+이 꺾쇠 괄호 안에 배열 표시를 사용하느냐 아니냐의 결정은 API 엔드포인트에서 기대하는 데이터의 구조에 달려 있습니다. 엔드포인트가 NewsDetail 객체들로 이루어진 배열을 반환한다면 배열 표시를 사용해야 합니다. 그러나 현재의 경우 CONTENT_URL.replace("@id", id) 엔드포인트가 단일 객체를 반환하는 것으로 보이므로 배열 표시를 사용하지 않습니다.
+
+
+=> 즉 NewsFeed는 배열로 이루어진 여러개의 객체를 반환하고, NewsDetail은 하나의 객체를 반환하기 때문에 
+[]의 여부의 차이가 있다.

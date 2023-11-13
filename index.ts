@@ -23,9 +23,9 @@ type NewsDetail = News & {
   comments: NewsComment[];
   level: number;
 };
-type NewsComment = {
+type NewsComment = News & {
   comments: NewsComment[];
-  lever: number;
+  level: number;
 };
 const ajax: XMLHttpRequest = new XMLHttpRequest();
 const NEWS_URL = "https://api.hnpwa.com/v0/news/1.json";
@@ -39,7 +39,7 @@ const store: Store = {
   feeds: [],
 };
 
-const getData = (url: string): NewsFeed | NewsDetail => {
+const getData = <AjaxResponse>(url: string): AjaxResponse => {
   // getData는 return 값이 url에 따라서 두가지 타입으로 출력되고 있으므로 위와 같이 | 사용하여 구분해준다.
 
   ajax.open("GET", url, false); // false -> 데이터를 동기적으로 처리하겠다.
@@ -48,7 +48,9 @@ const getData = (url: string): NewsFeed | NewsDetail => {
   return JSON.parse(ajax.response); //return은 결과물을 내보낼때 필요
 }; //중복되는 코드 함수로 코드 묶기
 
-const makeFeeds = (feedsData) => {
+const makeFeeds = (feedsData: NewsFeed[]): NewsFeed[] => {
+  //feedsData: NewsFeed[] 입력매개변수의 타입
+  // NewsFeed[] 반환값의 타입
   for (let i = 0; i < feedsData.length; i++) {
     feedsData[i].read = false; //모든 뉴스 항목의 초기 읽음 여부를 false로 설정 (read key 추가)
   }
@@ -56,7 +58,8 @@ const makeFeeds = (feedsData) => {
 };
 
 // container가 null인 경우 , innerHTML 속성을 쓸 수 없기 때문에 type에러가 남. 이 부분에 대하여 따로 처리하기 위해 함수 작성
-const updateView = (html) => {
+const updateView = (html: string): void => {
+  // 반환값이 없기 때문에 void 사용
   if (container) {
     container.innerHTML = html;
   } else {
@@ -64,7 +67,7 @@ const updateView = (html) => {
   }
 };
 
-const newsFeed = () => {
+const newsFeed = (): void => {
   let newsFeeds: NewsFeed[] = store.feeds;
   const newsList = [];
   let template = `
@@ -92,7 +95,7 @@ const newsFeed = () => {
     </div>
   `;
   if (!newsFeeds.length) {
-    newsFeeds = makeFeeds(getData(NEWS_URL)); // 초기에 한번 데이터를 가져온다
+    newsFeeds = makeFeeds(getData<NewsFeed[]>(NEWS_URL)); // 초기에 한번 데이터를 가져온다
   }
   for (let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
     newsList.push(`
@@ -124,18 +127,18 @@ const newsFeed = () => {
   // newsList 자체는 배열이기 때문에 innerHTML에 들어갈 수 없다. 따라서 join함수를 이용해서 문자열로 바꿔준다.
   template = template.replace(
     "{{__prev_page__}}",
-    store.currentPage > 1 ? store.currentPage - 1 : 1
+    String(store.currentPage > 1 ? store.currentPage - 1 : 1)
   ); //이전 페이지로 이동하기 위해서 store.currentPage를 페이지마다 변경하여 저장
   template = template.replace(
     "{{__next_page__}}",
-    store.currentPage < 3 ? store.currentPage + 1 : 3
+    String(store.currentPage < 3 ? store.currentPage + 1 : 3)
   ); //다음  페이지로 이동하기 위해서 store.currentPage를 페이지마다 변경하여 저장
   //마지막 페이지가 3페이지기에 3을 기준으로 변경
   updateView(template);
 };
-const newsDetail = () => {
+const newsDetail = (): void => {
   const id = location.hash.substring(7); // 여기에 this.location.hash 랑 그냥 location.hash의 차이를 알아보자 (this를 자동완성해주었다.)
-  const newsContent = getData(CONTENT_URL.replace("@id", id));
+  const newsContent = getData<NewsDetail>(CONTENT_URL.replace("@id", id));
   let template = `
     <div class="bg-gray-600 min-h-screen pb-8">
       <div class="bg-white text-xl">
@@ -174,35 +177,35 @@ const newsDetail = () => {
     }
   }
 
-  const makeComment = (comments, called = 0) => {
-    const commentString = [];
-    //대댓글 구현하는 구조 잘 봐두기!!
-    for (let i = 0; i < comments.length; i++) {
-      commentString.push(`
-        <div style="padding-left: ${called * 40}px;" class="mt-4">
-          <div class="text-gray-400">
-            <i class="fa fa-sort-up mr-2"></i>
-            <strong>${comments[i].user}</strong> ${comments[i].time_ago}
-          </div>
-          <p class="text-gray-700">${comments[i].content}</p>
-        </div>      
-      `);
-      if (comments[i].comments.length > 0) {
-        // console.log(called);
-        commentString.push(makeComment(comments[i].comments, called + 1)); //재귀호출
-        // console.log(commentString);
-      } // => 대댓글을 구현하는 구조
-      //대댓글이 있으면 재귀호출을 사용해서 makeComment를 호출하고 commentString에 넣는다
-    }
-    // console.log(commentString);
-    return commentString.join("");
-  };
   updateView(
     template.replace("  {{__comments__}}", makeComment(newsContent.comments))
   );
 };
-
-const router = () => {
+const makeComment = (comments: NewsComment[]): string => {
+  const commentString = [];
+  //대댓글 구현하는 구조 잘 봐두기!!
+  for (let i = 0; i < comments.length; i++) {
+    const comment: NewsComment = comments[i];
+    commentString.push(`
+        <div style="padding-left: ${comment.level * 40}px;" class="mt-4">
+          <div class="text-gray-400">
+            <i class="fa fa-sort-up mr-2"></i>
+            <strong>${comment.user}</strong> ${comment.time_ago}
+          </div>
+          <p class="text-gray-700">${comment.content}</p>
+        </div>      
+      `);
+    if (comment.comments.length > 0) {
+      // console.log(called);
+      commentString.push(makeComment(comment.comments)); //재귀호출
+      // console.log(commentString);
+    } // => 대댓글을 구현하는 구조
+    //대댓글이 있으면 재귀호출을 사용해서 makeComment를 호출하고 commentString에 넣는다
+  }
+  // console.log(commentString);
+  return commentString.join("");
+};
+const router = (): void => {
   const routePath = location.hash;
   // console.log(routePath);
   if (routePath === "") {

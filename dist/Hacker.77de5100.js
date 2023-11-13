@@ -137,6 +137,8 @@ var getData = function getData(url) {
   return JSON.parse(ajax.response); //return은 결과물을 내보낼때 필요
 }; //중복되는 코드 함수로 코드 묶기
 var makeFeeds = function makeFeeds(feedsData) {
+  //feedsData: NewsFeed[] 입력매개변수의 타입
+  // NewsFeed[] 반환값의 타입
   for (var i = 0; i < feedsData.length; i++) {
     feedsData[i].read = false; //모든 뉴스 항목의 초기 읽음 여부를 false로 설정 (read key 추가)
   }
@@ -145,6 +147,7 @@ var makeFeeds = function makeFeeds(feedsData) {
 };
 // container가 null인 경우 , innerHTML 속성을 쓸 수 없기 때문에 type에러가 남. 이 부분에 대하여 따로 처리하기 위해 함수 작성
 var updateView = function updateView(html) {
+  // 반환값이 없기 때문에 void 사용
   if (container) {
     container.innerHTML = html;
   } else {
@@ -166,8 +169,8 @@ var newsFeed = function newsFeed() {
   template = template.replace("{{__news_feed__}}", newsList.join(""));
   // newsList이 배열이기 때문에 문자열로 합치기 위해 join 사용
   // newsList 자체는 배열이기 때문에 innerHTML에 들어갈 수 없다. 따라서 join함수를 이용해서 문자열로 바꿔준다.
-  template = template.replace("{{__prev_page__}}", store.currentPage > 1 ? store.currentPage - 1 : 1); //이전 페이지로 이동하기 위해서 store.currentPage를 페이지마다 변경하여 저장
-  template = template.replace("{{__next_page__}}", store.currentPage < 3 ? store.currentPage + 1 : 3); //다음  페이지로 이동하기 위해서 store.currentPage를 페이지마다 변경하여 저장
+  template = template.replace("{{__prev_page__}}", String(store.currentPage > 1 ? store.currentPage - 1 : 1)); //이전 페이지로 이동하기 위해서 store.currentPage를 페이지마다 변경하여 저장
+  template = template.replace("{{__next_page__}}", String(store.currentPage < 3 ? store.currentPage + 1 : 3)); //다음  페이지로 이동하기 위해서 store.currentPage를 페이지마다 변경하여 저장
   //마지막 페이지가 3페이지기에 3을 기준으로 변경
   updateView(template);
 };
@@ -183,25 +186,23 @@ var newsDetail = function newsDetail() {
       break;
     }
   }
-  var makeComment = function makeComment(comments, called) {
-    if (called === void 0) {
-      called = 0;
-    }
-    var commentString = [];
-    //대댓글 구현하는 구조 잘 봐두기!!
-    for (var i = 0; i < comments.length; i++) {
-      commentString.push("\n        <div style=\"padding-left: ".concat(called * 40, "px;\" class=\"mt-4\">\n          <div class=\"text-gray-400\">\n            <i class=\"fa fa-sort-up mr-2\"></i>\n            <strong>").concat(comments[i].user, "</strong> ").concat(comments[i].time_ago, "\n          </div>\n          <p class=\"text-gray-700\">").concat(comments[i].content, "</p>\n        </div>      \n      "));
-      if (comments[i].comments.length > 0) {
-        // console.log(called);
-        commentString.push(makeComment(comments[i].comments, called + 1)); //재귀호출
-        // console.log(commentString);
-      } // => 대댓글을 구현하는 구조
-      //대댓글이 있으면 재귀호출을 사용해서 makeComment를 호출하고 commentString에 넣는다
-    }
-    // console.log(commentString);
-    return commentString.join("");
-  };
   updateView(template.replace("  {{__comments__}}", makeComment(newsContent.comments)));
+};
+var makeComment = function makeComment(comments) {
+  var commentString = [];
+  //대댓글 구현하는 구조 잘 봐두기!!
+  for (var i = 0; i < comments.length; i++) {
+    var comment = comments[i];
+    commentString.push("\n        <div style=\"padding-left: ".concat(comment.level * 40, "px;\" class=\"mt-4\">\n          <div class=\"text-gray-400\">\n            <i class=\"fa fa-sort-up mr-2\"></i>\n            <strong>").concat(comment.user, "</strong> ").concat(comment.time_ago, "\n          </div>\n          <p class=\"text-gray-700\">").concat(comment.content, "</p>\n        </div>      \n      "));
+    if (comment.comments.length > 0) {
+      // console.log(called);
+      commentString.push(makeComment(comment.comments)); //재귀호출
+      // console.log(commentString);
+    } // => 대댓글을 구현하는 구조
+    //대댓글이 있으면 재귀호출을 사용해서 makeComment를 호출하고 commentString에 넣는다
+  }
+  // console.log(commentString);
+  return commentString.join("");
 };
 var router = function router() {
   var routePath = location.hash;
@@ -243,7 +244,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49910" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52027" + '/');
   ws.onmessage = function (event) {
     checkedAssets = {};
     assetsToAccept = [];
