@@ -6,7 +6,6 @@ interface News {
   readonly id: number; //readonly를 붙이면 타입값이 변하지 않음.
   readonly url: string;
   readonly time_ago: string;
-
   readonly title: string;
   readonly content: string;
   readonly user: string;
@@ -31,19 +30,58 @@ const container: HTMLElement | null = document.getElementById("root");
 const content = document.createElement("div");
 //container 변수화하는 이유가 코드를 중복사용하지 않기 위해서도 있지만 (보기 좋기 짧게 하기 위해서 )id나 className이 바뀌었을 때 모든 getElementsById 속 id를 바꾸지 않기 위해서도 있다.
 
+const applyApiMixins = (targetClass: any, baseClasses: any[]): void => {
+  baseClasses.forEach((baseClass) => {
+    Object.getOwnPropertyNames(baseClass.prototype).forEach((name) => {
+      const descriptor = Object.getOwnPropertyDescriptor(
+        baseClass.prototype,
+        name
+      );
+
+      if (descriptor) {
+        Object.defineProperty(targetClass.prototype, name, descriptor);
+      }
+    });
+  });
+};
+
 const store: Store = {
   currentPage: 1,
   feeds: [],
 };
+class Api {
+  getRequest<AjaxResponse>(url: string): AjaxResponse {
+    const ajax = new XMLHttpRequest();
+    ajax.open("GET", url, false);
+    ajax.send();
 
-const getData = <AjaxResponse>(url: string): AjaxResponse => {
-  // getData는 return 값이 url에 따라서 두가지 타입으로 출력되고 있으므로 위와 같이 | 사용하여 구분해준다.
+    return JSON.parse(ajax.response);
+  }
+}
 
-  ajax.open("GET", url, false); // false -> 데이터를 동기적으로 처리하겠다.
-  ajax.send(); //데이터를 가져오는 메서드
+class NewsFeedApi {
+  getData(): NewsFeed[] {
+    return this.getRequest<NewsFeed[]>(NEWS_URL);
+  }
+}
+class NewsDetailApi {
+  getData(id: string): NewsDetail {
+    return this.getRequest<NewsDetail>(CONTENT_URL.replace("@id", id));
+  }
+}
 
-  return JSON.parse(ajax.response); //return은 결과물을 내보낼때 필요
-}; //중복되는 코드 함수로 코드 묶기
+interface NewsFeedApi extends Api {}
+interface NewsDetailApi extends Api {}
+// const getData = <AjaxResponse>(url: string): AjaxResponse  {
+
+//   ajax.open("GET", url, false); // false -> 데이터를 동기적으로 처리하겠다.
+//   ajax.send(); //데이터를 가져오는 메서드
+
+//   return JSON.parse(ajax.response); //return은 결과물을 내보낼때 필요
+// }; //중복되는 코드 함수로 코드 묶기
+
+applyApiMixins(NewsFeedApi, [Api]); // [Api] => 다중상속 가능성 열어두기
+applyApiMixins(NewsDetailApi, [Api]);
 
 const makeFeeds = (feedsData: NewsFeed[]): NewsFeed[] => {
   //feedsData: NewsFeed[] 입력매개변수의 타입
@@ -65,6 +103,7 @@ const updateView = (html: string): void => {
 };
 
 const newsFeed = (): void => {
+  const api = new NewsFeedApi();
   let newsFeeds: NewsFeed[] = store.feeds;
   const newsList = [];
   let template = `
@@ -92,7 +131,7 @@ const newsFeed = (): void => {
     </div>
   `;
   if (!newsFeeds.length) {
-    newsFeeds = makeFeeds(getData<NewsFeed[]>(NEWS_URL)); // 초기에 한번 데이터를 가져온다
+    newsFeeds = makeFeeds(api.getData()); // 초기에 한번 데이터를 가져온다
   }
   for (let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
     newsList.push(`
@@ -135,7 +174,8 @@ const newsFeed = (): void => {
 };
 const newsDetail = (): void => {
   const id = location.hash.substring(7); // 여기에 this.location.hash 랑 그냥 location.hash의 차이를 알아보자 (this를 자동완성해주었다.)
-  const newsContent = getData<NewsDetail>(CONTENT_URL.replace("@id", id));
+  const api = new NewsDetailApi();
+  const newsContent = api.getData(id);
   let template = `
     <div class="bg-gray-600 min-h-screen pb-8">
       <div class="bg-white text-xl">
